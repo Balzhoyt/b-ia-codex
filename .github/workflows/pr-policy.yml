@@ -1,0 +1,89 @@
+name: PR Policy
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  issues:
+    types: [labeled, unlabeled]
+
+permissions: {}
+
+jobs:
+  pr-policy:
+    name: PR policy status
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Check out trusted policy from the default branch
+        # actions/checkout v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Refresh durable PR policy status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          publish() {
+            gh api --method POST \
+              "repos/${GITHUB_REPOSITORY}/statuses/$1" \
+              -f state="$2" \
+              -f context='PR policy' \
+              -f description="$3" >/dev/null
+          }
+
+          evaluate() {
+            local pr_number="$1"
+            local changed_issue="${2-}"
+            local pr_json head_sha body labels linked_issue issue_json
+
+            pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}")"
+            head_sha="$(jq -r '.head.sha' <<<"$pr_json")"
+            body="$(jq -r '.body // ""' <<<"$pr_json")"
+            labels="$(jq -r '.labels[].name' <<<"$pr_json")"
+            linked_issue="$(
+              PR_BODY="$body" bash scripts/validate-pr.sh --issue-number 2>/dev/null
+            )" || linked_issue=''
+
+            [[ -z "$changed_issue" || "$linked_issue" == "$changed_issue" ]] || return 0
+            publish "$head_sha" pending 'PR policy evaluation in progress'
+
+            if [[ -z "$linked_issue" ]]; then
+              publish "$head_sha" failure 'PR must link an issue'
+              return 0
+            fi
+            if ! issue_json="$(
+              gh api "repos/${GITHUB_REPOSITORY}/issues/${linked_issue}"
+            )"; then
+              publish "$head_sha" failure "Linked issue #${linked_issue} was not found"
+              return 0
+            fi
+            if PR_BODY="$body" PR_LABELS="$labels" ISSUE_JSON="$issue_json" \
+              bash scripts/validate-pr.sh >/dev/null 2>&1; then
+              publish "$head_sha" success "Approved issue #${linked_issue}; one type label"
+            else
+              publish "$head_sha" failure 'PR policy validation failed'
+            fi
+          }
+
+          if [[ "$GITHUB_EVENT_NAME" == 'pull_request_target' ]]; then
+            evaluate "$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
+          else
+            changed_issue="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
+            if jq -e '.issue | has("pull_request")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              exit 0
+            fi
+            gh api --paginate --slurp \
+              "repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&per_page=100" \
+              --jq 'add | .[].number' |
+              while IFS= read -r pr_number; do
+                evaluate "$pr_number" "$changed_issue"
+              done
+          fi
