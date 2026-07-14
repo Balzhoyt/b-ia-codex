@@ -1,0 +1,62 @@
+name: Repository Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  repository-checks:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out pull request
+        # actions/checkout v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Check shell syntax
+        run: |
+          found=0
+          while IFS= read -r -d '' file; do
+            found=1
+            bash -n "$file"
+          done < <(find . -type f -name '*.sh' -not -path './.git/*' -print0)
+          (( found == 1 )) || printf 'No shell files found; syntax check skipped intentionally.\n'
+
+      - name: Run ShellCheck
+        run: |
+          command -v shellcheck >/dev/null || {
+            printf 'ShellCheck is required on the runner.\n' >&2
+            exit 1
+          }
+          found=0
+          while IFS= read -r -d '' file; do
+            found=1
+            shellcheck "$file"
+          done < <(find . -type f -name '*.sh' -not -path './.git/*' -print0)
+          (( found == 1 )) || printf 'No shell files found; ShellCheck skipped intentionally.\n'
+
+      - name: Run CI contract
+        run: bash tests/ci/test_validate_pr.sh
+
+      - name: Run repository contracts when present
+        run: |
+          if [[ -e tests/contracts/run.sh ]] \
+            && ! [[ -f tests/contracts/run.sh && -r tests/contracts/run.sh ]]; then
+            printf 'tests/contracts/run.sh must be a readable regular file.\n' >&2
+            exit 1
+          elif [[ -r tests/contracts/run.sh && -f tests/contracts/run.sh ]]; then
+            bash tests/contracts/run.sh
+          elif find tests/contracts -maxdepth 1 -type f -name 'test_*.sh' -print -quit 2>/dev/null \
+            | grep -q .; then
+            printf 'Repository contracts exist but tests/contracts/run.sh is missing.\n' >&2
+            exit 1
+          else
+            printf 'No repository contract suite found; bootstrap skip is intentional.\n'
+          fi
