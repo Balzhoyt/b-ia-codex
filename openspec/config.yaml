@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  Project: b-ia-codex
+  Repository state: Greenfield bootstrap repository
+  Tech stack: Not selected
+  Architecture: Not established
+  Testing: Strict TDD is required; task 1.1 is the sole runner-bootstrap exception
+  Artifact store: hybrid (OpenSpec files and Engram)
+  Artifact language: Neutral professional Spanish; preserve technical identifiers verbatim
+
+rules:
+  proposal:
+    - Include a rollback plan and measurable success criteria
+    - Keep artifacts under 450 words
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords
+  design:
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase and keep each task completable in one session
+  apply:
+    instructions:
+      - Task 1.1 MUST create a failing harness test, make the runner GREEN, then immediately set tdd true and test_command to bash tests/contracts/run.sh
+      - PRs 2-4 MUST NOT start until task 1.1 has activated executable strict RED-GREEN-REFACTOR
+    tdd: true
+    test_command: "bash tests/contracts/run.sh"
+  verify:
+    test_command: "bash tests/contracts/run.sh"
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
