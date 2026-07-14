@@ -68,7 +68,11 @@ assert_line "$POLICY_WORKFLOW" '  pull_request_target:'
 assert_line "$POLICY_WORKFLOW" 'permissions: {}'
 assert_line "$POLICY_WORKFLOW" '      contents: read'
 assert_line "$POLICY_WORKFLOW" '      issues: read'
-grep -Fq 'github.event.pull_request.base.sha' "$POLICY_WORKFLOW"
+grep -Fq 'github.event.repository.default_branch' "$POLICY_WORKFLOW"
+if grep -Fq 'github.event.pull_request.base.sha' "$POLICY_WORKFLOW"; then
+  printf 'FAIL: trusted policy must load from the current default branch\n' >&2
+  exit 1
+fi
 assert_line "$POLICY_WORKFLOW" '          persist-credentials: false'
 assert_line "$POLICY_WORKFLOW" "        uses: $CHECKOUT_SHA"
 assert_line "$REPOSITORY_WORKFLOW" '  pull_request:'
