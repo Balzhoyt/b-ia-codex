@@ -2,6 +2,7 @@
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 pre="$root/templates/codex/.bia/validators/preflight.sh"
+# shellcheck disable=SC1091
 source "$root/tests/contracts/lib/path_fixture.sh"
 test -x "$pre"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT

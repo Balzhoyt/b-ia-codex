@@ -2,6 +2,7 @@
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=templates/codex/.bia/validators/common.sh
+# shellcheck disable=SC1091
 source "$here/common.sh"
 
 (($# == 4)) || bia_die "$BIA_USAGE" "Uso: paths.sh canonical-source SOURCE DEST CONSUMER"

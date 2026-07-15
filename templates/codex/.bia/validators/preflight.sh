@@ -2,8 +2,10 @@
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=templates/codex/.bia/validators/common.sh
+# shellcheck disable=SC1091
 source "$here/common.sh"
 # shellcheck source=templates/codex/.bia/validators/lib/dependencies.sh
+# shellcheck disable=SC1091
 source "$here/lib/dependencies.sh"
 
 status_file=""; expected=""; read_only=false
