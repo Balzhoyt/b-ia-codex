@@ -6,7 +6,7 @@ pre="$root/templates/codex/.bia/validators/preflight.sh"
 source "$root/tests/contracts/lib/path_fixture.sh"
 test -x "$pre"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-make_dependency_path "$tmp/bin-full"
+make_dependency_path "$tmp/bin-full" bash dirname jq
 cp -a "$tmp/bin-full" "$tmp/bin-no-jq"; rm "$tmp/bin-no-jq/jq"
 printf '%s\n' git codex gentle-ai engram jq > "$tmp/false-dependencies.txt"
 
