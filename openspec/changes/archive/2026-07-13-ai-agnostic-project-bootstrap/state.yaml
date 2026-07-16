@@ -1,0 +1,41 @@
+change: ai-agnostic-project-bootstrap
+phase: archive
+artifact_store: hybrid
+artifacts:
+  proposal: true
+  specs: true
+  design: true
+  tasks: true
+  apply_progress: true
+  verify_report: true
+  archive_report: true
+tasks_progress:
+  completed:
+    - "1.1"
+    - "1.2"
+    - "1.3"
+    - "2.1"
+    - "2.2"
+    - "2.3"
+    - "2.4"
+    - "2.5"
+    - "3.1"
+    - "3.2"
+    - "3.3"
+    - "4.1"
+    - "4.2"
+    - "4.3"
+    - "4.4"
+  pending: []
+verification:
+  status: pass
+  report: verify-report.md
+  covers_tasks_through: "4.4"
+  invalidated_by_task: null
+  archive_ready: true
+archive:
+  status: complete
+  date: 2026-07-13
+  path: openspec/changes/archive/2026-07-13-ai-agnostic-project-bootstrap
+next_recommended: none
+last_updated: 2026-07-13
