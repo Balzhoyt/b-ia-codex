@@ -1,0 +1,4 @@
+# BEGIN B-IA managed
+.bia/tmp/
+.bia-backup/
+# END B-IA managed
